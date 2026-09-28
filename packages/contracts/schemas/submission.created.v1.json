@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://forgerun.io/schemas/submission.created.v1.json",
+  "title": "SubmissionCreatedPayload",
+  "type": "object",
+  "properties": {
+    "submission_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "attempt_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "user_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "problem_version_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "language": {
+      "type": "string",
+      "enum": ["python", "cpp", "java", "rust"]
+    },
+    "base_priority": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "default": 50
+    }
+  },
+  "required": [
+    "submission_id",
+    "attempt_id",
+    "user_id",
+    "problem_version_id",
+    "language"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://forgerun.io/schemas/execution.scheduled.v1.json",
+  "title": "ExecutionScheduledPayload",
+  "type": "object",
+  "properties": {
+    "attempt_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "submission_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "user_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "priority": {
+      "type": "integer"
+    },
+    "scheduled_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "scheduler_partition": {
+      "type": "integer"
+    }
+  },
+  "required": [
+    "attempt_id",
+    "submission_id",
+    "user_id",
+    "priority",
+    "scheduled_at",
+    "scheduler_partition"
+  ],
+  "additionalProperties": false
+}

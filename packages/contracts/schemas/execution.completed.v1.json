@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://forgerun.io/schemas/execution.completed.v1.json",
+  "title": "ExecutionCompletedPayload",
+  "type": "object",
+  "properties": {
+    "attempt_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "submission_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "verdict": {
+      "type": "string",
+      "enum": [
+        "ACCEPTED",
+        "WRONG_ANSWER",
+        "COMPILE_ERROR",
+        "RUNTIME_ERROR",
+        "TIME_LIMIT",
+        "MEMORY_LIMIT",
+        "OUTPUT_LIMIT",
+        "CANCELED",
+        "SANDBOX_ERROR",
+        "INFRASTRUCTURE_FAILURE"
+      ]
+    },
+    "execution_ms": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "cpu_ms": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "peak_memory_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "tests_passed": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "tests_total": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "artifact_uri": {
+      "type": ["string", "null"]
+    }
+  },
+  "required": [
+    "attempt_id",
+    "submission_id",
+    "verdict",
+    "execution_ms",
+    "cpu_ms",
+    "peak_memory_bytes",
+    "tests_passed",
+    "tests_total"
+  ],
+  "additionalProperties": false
+}

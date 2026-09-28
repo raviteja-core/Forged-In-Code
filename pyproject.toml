@@ -1,0 +1,28 @@
+[tool.pytest.ini_options]
+pythonpath = [
+    ".",
+    "packages/contracts/python",
+    "services/api",
+]
+testpaths = [
+    "packages/contracts/python/tests",
+    "services/api/tests",
+    "tests",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+]
+ignore = [
+    "E501", # line too long (handled by formatter)
+]

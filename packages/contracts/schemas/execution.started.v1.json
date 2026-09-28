@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://forgerun.io/schemas/execution.started.v1.json",
+  "title": "ExecutionStartedPayload",
+  "type": "object",
+  "properties": {
+    "attempt_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "submission_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "pod_name": {
+      "type": "string"
+    },
+    "node_name": {
+      "type": "string"
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "attempt_id",
+    "submission_id",
+    "pod_name",
+    "node_name"
+  ],
+  "additionalProperties": false
+}

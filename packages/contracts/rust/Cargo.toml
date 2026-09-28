@@ -1,0 +1,11 @@
+[package]
+name = "forgerun-contracts"
+version = "0.1.0"
+edition = "2021"
+description = "Shared event contracts and schema types for ForgeRun Rust services"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+uuid = { version = "1.8", features = ["serde", "v4"] }
+chrono = { version = "0.4", features = ["serde"] }
