@@ -1,0 +1,15 @@
+[package]
+name = "forgerun-scheduler"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+forgerun-contracts = { path = "../../packages/contracts/rust" }
+tokio = { version = "1.38", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+uuid = { version = "1.8", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+rdkafka = { version = "0.39", features = ["tokio"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }

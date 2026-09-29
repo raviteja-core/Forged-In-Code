@@ -1,0 +1,28 @@
+{
+  "slug": "two-sum",
+  "title": "Two Sum",
+  "difficulty": "EASY",
+  "status": "PUBLISHED",
+  "version": 1,
+  "runtime_manifest": {
+    "language": "python",
+    "entrypoint": "solution.py",
+    "time_limit_ms": 2000,
+    "memory_limit_mb": 256,
+    "max_output_bytes": 65536,
+    "test_cases": [
+      {
+        "input": "2 7 11 15\n9\n",
+        "expected_output": "0 1"
+      },
+      {
+        "input": "3 2 4\n6\n",
+        "expected_output": "1 2"
+      },
+      {
+        "input": "3 3\n6\n",
+        "expected_output": "0 1"
+      }
+    ]
+  }
+}

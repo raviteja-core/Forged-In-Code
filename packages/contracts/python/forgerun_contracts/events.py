@@ -11,6 +11,7 @@ PayloadT = TypeVar("PayloadT", bound=BaseModel)
 
 class EventEnvelope(BaseModel, Generic[PayloadT]):
     """Standardized event envelope used across all Kafka topics."""
+
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     event_id: UUID = Field(default_factory=uuid4, description="Unique event identifier")
@@ -28,6 +29,7 @@ class EventEnvelope(BaseModel, Generic[PayloadT]):
 
 class SubmissionCreatedPayload(BaseModel):
     """Payload for forge.submission.created.v1"""
+
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     submission_id: UUID
@@ -40,6 +42,7 @@ class SubmissionCreatedPayload(BaseModel):
 
 class ExecutionScheduledPayload(BaseModel):
     """Payload for forge.execution.scheduled.v1"""
+
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     attempt_id: UUID
@@ -52,6 +55,7 @@ class ExecutionScheduledPayload(BaseModel):
 
 class ExecutionStartedPayload(BaseModel):
     """Payload for forge.execution.started.v1"""
+
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     attempt_id: UUID
@@ -63,6 +67,7 @@ class ExecutionStartedPayload(BaseModel):
 
 class ExecutionCompletedPayload(BaseModel):
     """Payload for forge.execution.completed.v1"""
+
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     attempt_id: UUID
@@ -78,6 +83,7 @@ class ExecutionCompletedPayload(BaseModel):
 
 class ExecutionFailedPayload(BaseModel):
     """Payload for forge.execution.failed.v1"""
+
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     attempt_id: UUID

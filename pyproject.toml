@@ -3,6 +3,9 @@ pythonpath = [
     ".",
     "packages/contracts/python",
     "services/api",
+    "services/outbox-publisher",
+    "services/execution-controller",
+    "services/result-collector",
 ]
 testpaths = [
     "packages/contracts/python/tests",
@@ -25,4 +28,5 @@ select = [
 ]
 ignore = [
     "E501", # line too long (handled by formatter)
+    "B008", # do not perform function calls in argument defaults (FastAPI Depends/Header pattern)
 ]

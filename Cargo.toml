@@ -1,5 +1,6 @@
 [workspace]
 members = [
     "packages/contracts/rust",
+    "services/scheduler",
 ]
 resolver = "2"
