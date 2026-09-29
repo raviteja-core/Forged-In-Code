@@ -1,10 +1,9 @@
-pub mod engine;
-
 use std::env;
 use std::time::Duration;
 
-use engine::SchedulerEngine;
-use forgerun_contracts::SubmissionCreatedEvent;
+use chrono::Utc;
+use forgerun_contracts::{EventEnvelope, ExecutionCompletedPayload, SubmissionCreatedEvent};
+use forgerun_scheduler::{EnqueueResult, SchedulerConfig, SchedulerEngine};
 use rdkafka::config::ClientConfig;
 use rdkafka::consumer::{CommitMode, Consumer, StreamConsumer};
 use rdkafka::message::Message;
@@ -20,6 +19,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         env::var("SCHEDULER_GROUP_ID").unwrap_or_else(|_| "forgerun-scheduler".to_string());
     let input_topic = env::var("KAFKA_TOPIC_SUBMISSION_CREATED")
         .unwrap_or_else(|_| "forge.submission.created.v1".to_string());
+    let completed_topic = env::var("KAFKA_TOPIC_EXECUTION_COMPLETED")
+        .unwrap_or_else(|_| "forge.execution.completed.v1".to_string());
     let output_topic = env::var("KAFKA_TOPIC_EXECUTION_SCHEDULED")
         .unwrap_or_else(|_| "forge.execution.scheduled.v1".to_string());
 
@@ -27,6 +28,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         brokers = %brokers,
         group_id = %group_id,
         input_topic = %input_topic,
+        completed_topic = %completed_topic,
         output_topic = %output_topic,
         "Starting ForgeRun Scheduler service"
     );
@@ -39,7 +41,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .set("auto.offset.reset", "earliest")
         .create()?;
 
-    consumer.subscribe(&[&input_topic])?;
+    consumer.subscribe(&[&input_topic, &completed_topic])?;
 
     // Initialize Kafka Producer
     let producer: FutureProducer = ClientConfig::new()
@@ -47,7 +49,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .set("message.timeout.ms", "5000")
         .create()?;
 
-    let mut engine = SchedulerEngine::new();
+    let mut engine = SchedulerEngine::new(SchedulerConfig::default());
 
     info!("Scheduler subscribed and waiting for events...");
 
@@ -63,19 +65,43 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                 };
 
-                let event: SubmissionCreatedEvent = match serde_json::from_slice(payload) {
-                    Ok(ev) => ev,
-                    Err(err) => {
-                        error!(error = %err, "Failed to deserialize SubmissionCreatedEvent");
-                        let _ = consumer.commit_message(&msg, CommitMode::Async);
-                        continue;
+                let now = Utc::now();
+                let topic = msg.topic();
+
+                // Dispatch depending on event topic
+                if topic == input_topic {
+                    match serde_json::from_slice::<SubmissionCreatedEvent>(payload) {
+                        Ok(event) => {
+                            let attempt_id = event.payload.attempt_id;
+                            match engine.enqueue(&event, now) {
+                                Ok(EnqueueResult::Enqueued) => {
+                                    info!(attempt_id = %attempt_id, "Enqueued submission attempt");
+                                }
+                                Ok(EnqueueResult::DuplicateSuppressed) => {
+                                    info!(attempt_id = %attempt_id, "Suppressed duplicate scheduling attempt");
+                                }
+                                Err(err) => {
+                                    warn!(attempt_id = %attempt_id, error = %err, "Failed to enqueue submission");
+                                }
+                            }
+                        }
+                        Err(err) => {
+                            error!(error = %err, "Failed to deserialize SubmissionCreatedEvent");
+                        }
                     }
-                };
+                } else if topic == completed_topic {
+                    if let Ok(event) =
+                        serde_json::from_slice::<EventEnvelope<ExecutionCompletedPayload>>(payload)
+                    {
+                        let attempt_id = event.payload.attempt_id;
+                        engine.on_attempt_completed(&attempt_id, now);
+                        info!(attempt_id = %attempt_id, "Freed concurrency slot on execution completion");
+                    }
+                }
 
-                let attempt_id = event.payload.attempt_id;
-                let partition = msg.partition() as u32;
-
-                if let Some(scheduled_event) = engine.schedule(&event, partition) {
+                // Schedule any ready tasks from the priority queue
+                while let Some(scheduled_event) = engine.try_schedule_next(now) {
+                    let attempt_id = scheduled_event.payload.attempt_id;
                     let key = attempt_id.to_string();
                     let payload_json = serde_json::to_string(&scheduled_event)?;
 
@@ -87,23 +113,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         Ok(_) => {
                             info!(
                                 attempt_id = %attempt_id,
-                                submission_id = %event.payload.submission_id,
+                                submission_id = %scheduled_event.payload.submission_id,
                                 priority = scheduled_event.payload.priority,
                                 "Successfully scheduled execution attempt"
                             );
-                            let _ = consumer.commit_message(&msg, CommitMode::Async);
                         }
                         Err((err, _)) => {
                             error!(attempt_id = %attempt_id, error = %err, "Failed to publish ExecutionScheduledEvent");
                         }
                     }
-                } else {
-                    info!(
-                        attempt_id = %attempt_id,
-                        "Suppressed duplicate scheduling attempt"
-                    );
-                    let _ = consumer.commit_message(&msg, CommitMode::Async);
                 }
+
+                let _ = consumer.commit_message(&msg, CommitMode::Async);
             }
             Err(err) => {
                 error!(error = %err, "Kafka consumer receive error");
