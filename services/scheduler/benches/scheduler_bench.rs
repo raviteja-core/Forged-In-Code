@@ -76,7 +76,7 @@ fn bench_dequeue(c: &mut Criterion) {
                 },
                 |(mut engine, now)| {
                     let mut scheduled = 0;
-                    while let Some(_) = engine.try_schedule_next(now) {
+                    while engine.try_schedule_next(now).is_some() {
                         scheduled += 1;
                     }
                     black_box(scheduled)
@@ -131,7 +131,7 @@ fn bench_fairness_overhead(c: &mut Criterion) {
             |(mut engine, now)| {
                 // Drain until quota allows
                 let mut scheduled = 0;
-                while let Some(_) = engine.try_schedule_next(now) {
+                while engine.try_schedule_next(now).is_some() {
                     scheduled += 1;
                 }
                 black_box(scheduled)
