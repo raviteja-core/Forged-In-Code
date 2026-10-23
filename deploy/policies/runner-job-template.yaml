@@ -1,0 +1,87 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: runner-attempt-${ATTEMPT_ID}
+  namespace: forge-runner
+  labels:
+    app.kubernetes.io/name: forgerun
+    app.kubernetes.io/component: sandbox-runner
+    forgerun.io/submission-id: "${SUBMISSION_ID}"
+    forgerun.io/attempt-id: "${ATTEMPT_ID}"
+    forgerun.io/language: "${LANGUAGE}"
+spec:
+  # Do not retry on container failures; retries are governed strictly by Platform reliability loop
+  backoffLimit: 0
+  activeDeadlineSeconds: 30
+  ttlSecondsAfterFinished: 60
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: forgerun
+        app.kubernetes.io/component: sandbox-runner
+        forgerun.io/attempt-id: "${ATTEMPT_ID}"
+    spec:
+      runtimeClassName: gvisor
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      hostNetwork: false
+      hostPID: false
+      hostIPC: false
+      
+      # Node isolation: Dedicated runner node pool with taint & toleration
+      nodeSelector:
+        dedicated: runner
+      tolerations:
+        - key: "dedicated"
+          operator: "Equal"
+          value: "runner"
+          effect: "NoSchedule"
+
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534 # nobody
+        runAsGroup: 65534
+        fsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
+
+      containers:
+        - name: runner
+          image: "${RUNNER_IMAGE_URI}" # Immutable tag e.g. ecr.aws/forgerun/runner-python:sha-da51613
+          imagePullPolicy: IfNotPresent
+          command:
+            - "/usr/local/bin/forgerun-runner"
+            - "--attempt-id"
+            - "${ATTEMPT_ID}"
+          
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "128Mi"
+              ephemeral-storage: "100Mi"
+            limits:
+              cpu: "1000m"
+              memory: "512Mi"
+              ephemeral-storage: "500Mi"
+
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+            - name: tmp
+              mountPath: /tmp
+
+      volumes:
+        - name: workspace
+          emptyDir:
+            sizeLimit: "256Mi"
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: "64Mi"

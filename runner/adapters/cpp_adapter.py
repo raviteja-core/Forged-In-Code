@@ -6,7 +6,7 @@ import time
 
 from forgerun_contracts.enums import Verdict
 
-from runner.core.manifest import get_default_policy
+from runner.core.manifest import SAFE_SUBPROCESS_ENV, get_default_policy, wrap_with_sandbox
 from runner.core.models import ExecutionLimits, RunnerResult, SingleTestResult, TestCase
 
 
@@ -93,14 +93,28 @@ def execute_cpp_submission(
                         resource.setrlimit(resource.RLIMIT_AS, (mem_bytes, mem_bytes))
                     except Exception:
                         pass
+                    try:
+                        resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+                    except Exception:
+                        pass
+                    try:
+                        fsize = limits.max_output_bytes * 4
+                        resource.setrlimit(resource.RLIMIT_FSIZE, (fsize, fsize))
+                    except Exception:
+                        pass
+                    try:
+                        resource.setrlimit(resource.RLIMIT_NPROC, (64, 64))
+                    except Exception:
+                        pass
 
                 proc = subprocess.Popen(
-                    [binary_path],
+                    wrap_with_sandbox([binary_path]),
                     cwd=workspace,
                     stdin=subprocess.PIPE,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                     text=True,
+                    env=SAFE_SUBPROCESS_ENV,
                     preexec_fn=preexec_fn,
                 )
 

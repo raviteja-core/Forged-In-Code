@@ -1,7 +1,29 @@
+import os
+import shutil
 import sys
 
 from forgerun_contracts.enums import Language
 from pydantic import BaseModel, Field
+
+# Sanitized environment isolating untrusted execution from host secrets and database credentials
+SAFE_SUBPROCESS_ENV = {
+    "PATH": os.environ.get(
+        "PATH", "/usr/local/cargo/bin:/opt/java/openjdk/bin:/usr/local/bin:/usr/bin:/bin"
+    ),
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8",
+    "HOME": "/tmp",
+    "RUST_BACKTRACE": "0",
+}
+
+HAS_UNSHARE = shutil.which("unshare") is not None
+
+
+def wrap_with_sandbox(cmd: list[str]) -> list[str]:
+    """Wraps execution command with user and network namespace isolation (unshare -r -n) when available."""
+    if HAS_UNSHARE and os.environ.get("FORGERUN_DISABLE_UNSHARE") != "1":
+        return ["unshare", "-r", "-n", "--"] + cmd
+    return cmd
 
 
 class LanguagePolicy(BaseModel):

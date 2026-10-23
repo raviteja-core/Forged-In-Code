@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: runner-complete-isolation
+  namespace: forge-runner
+  labels:
+    app.kubernetes.io/name: forgerun
+    app.kubernetes.io/component: sandbox-network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: sandbox-runner
+  policyTypes:
+    - Ingress
+    - Egress
+  # Empty ingress list blocks all incoming connections
+  ingress: []
+  # Empty egress list blocks all outbound connections (no internet, no VPC, no cluster DNS, no internal IPs)
+  egress: []

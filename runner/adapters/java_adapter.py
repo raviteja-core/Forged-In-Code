@@ -5,7 +5,7 @@ import time
 
 from forgerun_contracts.enums import Verdict
 
-from runner.core.manifest import get_default_policy
+from runner.core.manifest import SAFE_SUBPROCESS_ENV, get_default_policy, wrap_with_sandbox
 from runner.core.models import ExecutionLimits, RunnerResult, SingleTestResult, TestCase
 
 
@@ -92,12 +92,13 @@ def execute_java_submission(
 
             try:
                 proc = subprocess.Popen(
-                    run_cmd,
+                    wrap_with_sandbox(run_cmd),
                     cwd=workspace,
                     stdin=subprocess.PIPE,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                     text=True,
+                    env=SAFE_SUBPROCESS_ENV,
                 )
 
                 try:

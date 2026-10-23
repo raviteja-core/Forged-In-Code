@@ -7,6 +7,7 @@ import time
 
 from forgerun_contracts.enums import Verdict
 
+from runner.core.manifest import SAFE_SUBPROCESS_ENV, wrap_with_sandbox
 from runner.core.models import ExecutionLimits, RunnerResult, SingleTestResult, TestCase
 
 
@@ -39,19 +40,28 @@ def execute_python_submission(
                 # Pre-exec hook to limit address space where supported
                 def preexec_fn():
                     try:
-                        # Set memory limit in bytes
                         mem_bytes = limits.memory_limit_mb * 1024 * 1024
                         resource.setrlimit(resource.RLIMIT_AS, (mem_bytes, mem_bytes))
                     except Exception:
                         pass
+                    try:
+                        resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+                    except Exception:
+                        pass
+                    try:
+                        fsize = limits.max_output_bytes * 4
+                        resource.setrlimit(resource.RLIMIT_FSIZE, (fsize, fsize))
+                    except Exception:
+                        pass
 
                 proc = subprocess.Popen(
-                    [sys.executable, "-u", "solution.py"],
+                    wrap_with_sandbox([sys.executable, "-u", "solution.py"]),
                     cwd=workspace,
                     stdin=subprocess.PIPE,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                     text=True,
+                    env=SAFE_SUBPROCESS_ENV,
                     preexec_fn=preexec_fn,
                 )
 
