@@ -11,8 +11,8 @@ from forgerun_contracts.events import ExecutionScheduledEvent
 from sqlalchemy import select, update
 from sqlalchemy.orm import selectinload
 
-from runner.adapters.python_adapter import execute_python_submission
 from runner.core.models import ExecutionLimits, TestCase
+from runner.dispatcher import execute_submission
 from services.api.src.db.models import Submission, SubmissionAttempt
 from services.api.src.db.session import AsyncSessionLocal
 
@@ -87,11 +87,12 @@ class ExecutionController:
             )
             source_code = submission.source_code
 
-        # 2. Execute via language runner adapter in thread pool to avoid blocking asyncio event loop
+        # 2. Execute via multi-language runner adapter in thread pool
         loop = asyncio.get_running_loop()
         runner_result = await loop.run_in_executor(
             None,
-            execute_python_submission,
+            execute_submission,
+            submission.language,
             source_code,
             test_cases,
             limits,
